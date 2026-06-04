@@ -1,0 +1,95 @@
+[
+  {
+    "id": 1,
+    "nom": "Formule Élégance",
+    "description": "Notre formule haut de gamme pour un mariage inoubliable. Inclut la coordination complète de la cérémonie et de la réception, la décoration florale personnalisée, et un maître de cérémonie dédié.",
+    "prix": "À partir de 4 500 €",
+    "inclus": [
+      "Coordination complète (cérémonie + réception)",
+      "Décoration florale sur mesure",
+      "Maître de cérémonie dédié",
+      "Gestion des prestataires",
+      "Rétroplanning personnalisé",
+      "Présence le jour J (12h)",
+      "Réunion de préparation (3 séances incluses)",
+      "Accueil et placement des invités",
+      "Coordination cocktail et dîner",
+      "Remise en ordre du lieu en fin de soirée"
+    ],
+    "non_inclus": [
+      "Traiteur (nous pouvons recommander des partenaires)",
+      "Photographe et vidéaste",
+      "Location de salle",
+      "Faire-part et papeterie",
+      "Transport des mariés"
+    ],
+    "capacite": "Jusqu'à 150 invités",
+    "disponibilite": "Disponible toute l'année",
+    "delai_reservation": "Recommandé 9 à 12 mois à l'avance",
+    "types_ceremonies": ["laïque", "civile", "religieuse"],
+    "options_disponibles": [
+      "Heure supplémentaire de présence (+150 €/h)",
+      "Séance de préparation supplémentaire (+200 €)",
+      "Décoration de voiture des mariés (+150 €)"
+    ]
+  },
+  {
+    "id": 2,
+    "nom": "Formule Essentielle",
+    "description": "L'essentiel pour organiser votre mariage sereinement. Un accompagnement professionnel pour la coordination du jour J, avec une aide à la sélection des prestataires.",
+    "prix": "À partir de 1 800 €",
+    "inclus": [
+      "Coordination du jour J",
+      "Aide à la sélection des prestataires",
+      "Rétroplanning de base",
+      "Présence le jour J (8h)",
+      "Carnet d'adresses prestataires partenaires",
+      "1 réunion de préparation incluse",
+      "Accueil des invités à l'arrivée",
+      "Coordination avec le traiteur et les prestataires le jour J"
+    ],
+    "non_inclus": [
+      "Décoration florale",
+      "Maître de cérémonie",
+      "Traiteur, photographe, salle",
+      "Remise en ordre du lieu"
+    ],
+    "capacite": "Jusqu'à 80 invités",
+    "disponibilite": "Disponible toute l'année",
+    "delai_reservation": "Recommandé 6 mois à l'avance",
+    "types_ceremonies": ["laïque", "civile", "religieuse"],
+    "options_disponibles": [
+      "Heure supplémentaire de présence (+150 €/h)",
+      "Réunion de préparation supplémentaire (+200 €)",
+      "Décoration florale basique en option (+sur devis)"
+    ]
+  },
+  {
+    "id": 3,
+    "nom": "Formule Sur-Mesure",
+    "description": "Une formule entièrement personnalisée selon vos envies et votre budget. Nous construisons ensemble le programme idéal pour votre mariage, de la première rencontre jusqu'au lendemain de la fête.",
+    "prix": "Devis personnalisé — contacter l'équipe pour obtenir un tarif adapté",
+    "inclus": [
+      "Consultation initiale approfondie",
+      "Accompagnement de A à Z",
+      "Coordination complète",
+      "Décoration et scénographie personnalisées",
+      "Gestion invitations et plan de table",
+      "Présence le jour J (durée illimitée)",
+      "Coordination des prestataires (traiteur, photographe, DJ, etc.)",
+      "Suivi personnalisé jusqu'au lendemain de la fête",
+      "Nombre de réunions de préparation selon les besoins"
+    ],
+    "non_inclus": [
+      "Tout est négociable — le devis précise exactement ce qui est inclus"
+    ],
+    "capacite": "Illimitée",
+    "disponibilite": "Sur demande",
+    "delai_reservation": "Recommandé 12 mois à l'avance minimum",
+    "types_ceremonies": ["laïque", "civile", "religieuse", "destination wedding", "mariage à l'étranger"],
+    "themes_possibles": [
+      "Champêtre, bohème, romantique, moderne, luxe, rustique, médiéval, et tout autre thème sur demande"
+    ]
+    
+  }
+]
