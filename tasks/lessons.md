@@ -40,7 +40,26 @@
 - Ajouter `non_inclus`, `delai_reservation`, `options_disponibles`, `themes_possibles` améliore nettement la qualité des réponses
 - **Ne pas ajouter de `questions_frequentes`** — les LLMs locaux les récitent trop littéralement et s'embrouillent ; mieux vaut laisser le modèle raisonner librement sur les données brutes
 
-## 2026-06-04
+## 2026-07-14 — MLOps (C11/C12/C13)
+
+### flake8 : E302 — 2 lignes vides requises avant une fonction de module
+- Python PEP8 exige 2 lignes vides entre le dernier import et la première fonction de niveau module
+- flake8 le signale avec E302 — correction simple : ajouter une ligne vide
+- À vérifier systématiquement dans tous les fichiers avant de configurer un pipeline CI
+
+### pytest + FastAPI TestClient : import du package parent
+- Quand les tests sont dans `backend/tests/` et importent `from backend.main import app`, pytest doit trouver `backend` comme package Python
+- Solution : créer `conftest.py` à la racine avec `sys.path.insert(0, os.path.dirname(__file__))`
+- Sans ça, pytest lève `ModuleNotFoundError: No module named 'backend'`
+
+### Métriques Prometheus sur modèle pré-entraîné
+- `completion.usage.completion_tokens` peut être `None` si Ollama ne retourne pas d'usage (selon la version)
+- Utiliser `getattr(getattr(completion, "usage", None), "completion_tokens", 0) or 0` pour éviter un crash
+- Le label `status="received"` est incrémenté avant l'appel Ollama pour compter aussi les timeouts
+
+### prometheus_client avec FastAPI : pas de middleware, juste un endpoint
+- Pas besoin de `make_asgi_app()` ni de middleware — un simple `@app.get("/metrics")` retournant `generate_latest()` suffit
+- `CONTENT_TYPE_LATEST` = `"text/plain; version=0.0.4; charset=utf-8"` — Prometheus sait le parser
 
 ### Sécurité API FastAPI
 - Toujours limiter la taille des inputs à la frontière système (nb messages + longueur contenu)

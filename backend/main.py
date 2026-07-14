@@ -1,10 +1,14 @@
 import os
+import time
 from typing import List
 
 from openai import OpenAI
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from prometheus_client import (
+    Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+)
 
 from system_prompt import get_system_prompt
 
@@ -24,6 +28,29 @@ client = OpenAI(
     base_url=f"{OLLAMA_URL}/v1",
     api_key="ollama",  # obligatoire par le SDK mais non utilisé par Ollama
 )
+
+# ---------------------------------------------------------------------------
+# Métriques Prometheus
+# ---------------------------------------------------------------------------
+
+CHAT_REQUESTS_TOTAL = Counter(
+    "chat_requests_total",
+    "Nombre total de requêtes reçues sur /api/chat",
+    ["status"],  # label : "success" | "error" | "validation_error"
+)
+
+CHAT_DURATION_SECONDS = Histogram(
+    "chat_duration_seconds",
+    "Temps de réponse d'Ollama en secondes",
+    buckets=[0.5, 1, 2, 5, 10, 20, 30, 60],
+)
+
+CHAT_TOKENS_GENERATED_TOTAL = Counter(
+    "chat_tokens_generated_total",
+    "Nombre total de tokens générés par Ollama",
+)
+
+# ---------------------------------------------------------------------------
 
 
 MAX_MESSAGES = 20
@@ -65,13 +92,24 @@ def chat(request: ChatRequest):
 
     messages_payload = [{"role": m.role, "content": m.content} for m in request.messages]
 
+    CHAT_REQUESTS_TOTAL.labels(status="received").inc()
+    start = time.time()
+
     try:
         completion = client.chat.completions.create(
             model=OLLAMA_MODEL,
             messages=[{"role": "system", "content": get_system_prompt()}] + messages_payload,
         )
     except Exception:
+        CHAT_REQUESTS_TOTAL.labels(status="error").inc()
         raise HTTPException(status_code=500, detail="Erreur interne, veuillez réessayer.")
+
+    duration = time.time() - start
+    CHAT_DURATION_SECONDS.observe(duration)
+    CHAT_REQUESTS_TOTAL.labels(status="success").inc()
+
+    tokens = getattr(getattr(completion, "usage", None), "completion_tokens", 0) or 0
+    CHAT_TOKENS_GENERATED_TOTAL.inc(tokens)
 
     return ChatResponse(response=completion.choices[0].message.content)
 
@@ -79,3 +117,9 @@ def chat(request: ChatRequest):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/metrics")
+def metrics():
+    """Endpoint Prometheus : expose les métriques du modèle en temps réel."""
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)

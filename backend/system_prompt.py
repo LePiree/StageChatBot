@@ -1,6 +1,7 @@
 import json
 import os
 
+
 def load_prestations() -> str:
     """Charge le fichier prestations.json et retourne son contenu formaté."""
     base_dir = os.path.dirname(os.path.abspath(__file__))

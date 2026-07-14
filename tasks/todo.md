@@ -23,7 +23,7 @@
 - [x] `OLLAMA_KEEP_ALIVE=-1` → modèle permanent en VRAM, plus de reload entre messages
 - [x] Règle 7 ajoutée au system prompt — concision, pas de répétition de contexte déjà partagé
 
-### 🔜 À faire (prochaine session)
+### 🔜 MLOps — Session 2026-07-14 (C12 → C11 → C13)
 - [x] Documenter le snippet WordPress dans un README ✅
 - [x] Tester la détection de langue (répondre en anglais si question en anglais) ✅
 - [x] Éventuellement tester `mistral:7b-instruct-q8_0` comme compromis qualité/vitesse → remplacé par llama3.1:8b ✅
@@ -36,3 +36,37 @@
 - [x] Sécurité backend — limite 20 messages / 2000 chars par message
 - [x] Hardening erreurs — plus de leak d'infos internes dans les 500
 - [x] CORS prod documenté dans README
+
+### 🔜 MLOps — Session 2026-07-14 (C12 → C11 → C13)
+
+#### C12 — Tests automatisés du modèle ✅
+- [x] Créer `backend/tests/__init__.py`
+- [x] Créer `backend/tests/test_chat_api.py` — cas nominaux + cas d'erreur
+  - [x] POST /api/chat → status 200, format réponse correct
+  - [x] Messages vide → status 400
+  - [x] Trop de messages (>20) → status 400
+  - [x] Rôle invalide → status 400
+  - [x] Message trop long (>2000 chars) → status 400
+  - [x] Dernier message pas "user" → status 400
+  - [x] Ollama indisponible (mock) → status 500
+- [x] Créer `backend/tests/test_health.py` — GET /health → status 200
+- [x] Créer `requirements-dev.txt` (pytest, httpx, pytest-asyncio)
+- [x] Vérifier que tous les tests passent en local — **16/16 ✅**
+
+#### C11 — Monitoring Prometheus + Grafana ✅
+- [x] Ajouter `prometheus_client` à `requirements.txt`
+- [x] Instrumenter `main.py` : compteur requêtes, histogramme durée, compteur tokens, compteur erreurs
+- [x] Ajouter endpoint `/metrics` dans `main.py`
+- [x] Créer `monitoring/prometheus.yml` (config scrape)
+- [x] Créer `monitoring/grafana/provisioning/` (datasource + dashboard auto-provisioning)
+- [x] Créer dashboard Grafana JSON (temps de réponse, tokens, erreurs)
+- [x] Ajouter services `prometheus` + `grafana` dans `docker-compose.yml`
+- [x] Vérifier dashboard accessible sur http://localhost:3000 ✅
+
+#### C13 — Pipeline CI/CD GitHub Actions ✅ (local)
+- [x] Créer `.github/workflows/ci.yml`
+  - [x] Déclencheurs : push main + pull_request
+  - [x] Job lint : flake8
+  - [x] Job tests : pytest avec mock Ollama
+  - [x] Job build : docker build (sans push)
+- [ ] Vérifier que le pipeline passe sur GitHub ← à confirmer après push
