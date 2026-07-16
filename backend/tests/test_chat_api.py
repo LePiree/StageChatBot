@@ -157,3 +157,39 @@ class TestChatOllamaUnavailable:
         with patch("backend.main.client.chat.completions.create", side_effect=TimeoutError("Timeout")):
             response = client.post("/api/chat", json={"messages": make_messages()})
         assert response.status_code == 500
+
+
+# ---------------------------------------------------------------------------
+# Régression — usage=None (comptage tokens Prometheus)
+# ---------------------------------------------------------------------------
+
+class TestChatUsageNone:
+    def test_usage_none_does_not_crash(self):
+        """Ollama peut ne pas retourner de champ 'usage' (selon la version).
+        Le endpoint doit retourner 200 sans lever d'exception.
+        Régression : fix via getattr(getattr(completion, 'usage', None), 'completion_tokens', 0).
+        """
+        choice = MagicMock()
+        choice.message.content = "Réponse sans usage."
+        completion = MagicMock()
+        completion.choices = [choice]
+        completion.usage = None  # Ollama ne retourne pas l'objet usage
+        with patch("backend.main.client.chat.completions.create", return_value=completion):
+            response = client.post("/api/chat", json={"messages": make_messages()})
+        assert response.status_code == 200
+        assert response.json()["response"] == "Réponse sans usage."
+
+    def test_usage_completion_tokens_none_does_not_crash(self):
+        """Ollama retourne un objet usage mais completion_tokens vaut None.
+        Le endpoint doit retourner 200 sans lever d'exception.
+        """
+        choice = MagicMock()
+        choice.message.content = "Réponse tokens None."
+        usage = MagicMock()
+        usage.completion_tokens = None  # champ présent mais None
+        completion = MagicMock()
+        completion.choices = [choice]
+        completion.usage = usage
+        with patch("backend.main.client.chat.completions.create", return_value=completion):
+            response = client.post("/api/chat", json={"messages": make_messages()})
+        assert response.status_code == 200
