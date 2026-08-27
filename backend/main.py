@@ -3,13 +3,11 @@ import time
 from typing import List, Optional
 
 from dotenv import load_dotenv
-from openai import OpenAI
-
-load_dotenv()  # charge .env à la racine du projet en dev local
 from fastapi import FastAPI, HTTPException, Response, Depends, Request, Security
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from openai import OpenAI
 from pydantic import BaseModel
 from prometheus_client import (
     Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
@@ -20,6 +18,8 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from system_prompt import get_system_prompt
+
+load_dotenv()  # charge .env à la racine du projet en dev local
 
 # ---------------------------------------------------------------------------
 # Rate limiting
@@ -61,6 +61,7 @@ def verify_token(
     expected = os.environ.get("API_TOKEN", "")
     if not expected or credentials is None or credentials.credentials != expected:
         raise HTTPException(status_code=401, detail="Authentification requise.")
+
 
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:1b")

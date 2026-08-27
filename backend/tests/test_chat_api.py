@@ -161,7 +161,8 @@ class TestChatOllamaUnavailable:
 
     def test_ollama_down_no_internal_leak(self):
         """Le message d'erreur 500 ne doit pas exposer de détails internes."""
-        with patch("backend.main.client.chat.completions.create", side_effect=Exception("http://ollama:11434 unreachable")):
+        side_effect = Exception("http://ollama:11434 unreachable")
+        with patch("backend.main.client.chat.completions.create", side_effect=side_effect):
             response = client.post("/api/chat", json={"messages": make_messages()}, headers=AUTH_HEADERS)
         body = response.json()
         # Le message générique ne doit pas contenir l'URL interne
@@ -169,7 +170,6 @@ class TestChatOllamaUnavailable:
 
     def test_timeout_returns_500(self):
         """Un timeout Ollama doit retourner 500 sans planter le serveur."""
-        import asyncio
         with patch("backend.main.client.chat.completions.create", side_effect=TimeoutError("Timeout")):
             response = client.post("/api/chat", json={"messages": make_messages()}, headers=AUTH_HEADERS)
         assert response.status_code == 500
