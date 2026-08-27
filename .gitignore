@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 *.pyo
 .DS_Store
+moi.md
+CONTEXT.md
+CLAUDE.md
+tasks/
