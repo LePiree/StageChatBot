@@ -54,7 +54,7 @@ Modifier `OLLAMA_MODEL` dans `docker-compose.yml` :
 
 ```yaml
 environment:
-  - OLLAMA_MODEL=mistral:7b   # ← changer ici
+  - OLLAMA_MODEL=llama3.1:8b   # ← changer ici
 ```
 
 Puis relancer :
@@ -104,4 +104,4 @@ Aucune clé API requise — le LLM tourne entièrement en local.
 | Variable | Défaut | Description |
 |---|---|---|
 | `OLLAMA_URL` | `http://ollama:11434` | URL interne du service Ollama |
-| `OLLAMA_MODEL` | `mistral:7b` | Modèle LLM à utiliser |
+| `OLLAMA_MODEL` | `llama3.1:8b` | Modèle LLM à utiliser |
