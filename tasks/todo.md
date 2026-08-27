@@ -69,4 +69,4 @@
   - [x] Job lint : flake8
   - [x] Job tests : pytest avec mock Ollama
   - [x] Job build : docker build (sans push)
-- [ ] Vérifier que le pipeline passe sur GitHub ← à confirmer après push
+- [x] Vérifier que le pipeline passe sur GitHub ✅

@@ -21,6 +21,7 @@ services:
     environment:
       - OLLAMA_URL=http://ollama:11434
       - OLLAMA_MODEL=llama3.1:8b
+      - API_TOKEN=${API_TOKEN}
     depends_on:
       - ollama
     restart: unless-stopped

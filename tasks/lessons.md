@@ -84,3 +84,29 @@
 - Ajouter une règle explicite dans le system prompt : réponse courte si question courte, pas de récap
 - C'est une limite du modèle : une règle réduit le problème mais ne l'élimine pas complètement
 - Pour un comportement vraiment précis, un modèle plus grand (claude-haiku etc.) serait nécessaire
+
+## 2026-08-27 — Auth, Rate limiting, Détection de langue
+
+### Auth Bearer FastAPI : utiliser Security() et non Depends() pour le Swagger
+- `Depends(_bearer_scheme)` dans une dependency imbriquée n'est pas remonté dans le schéma OpenAPI
+- Conséquence : le cadenas "Authorize" n'apparaît pas dans Swagger `/docs`
+- Fix : utiliser `Security(_bearer_scheme)` au lieu de `Depends(_bearer_scheme)` dans la dependency
+- `HTTPBearer(auto_error=False)` retourne `None` si le header est absent → permet de lever un 401 maîtrisé (vs 403 par défaut avec `auto_error=True`)
+
+### Rate limiting slowapi : le décorateur @limiter.limit() ne fonctionne pas en prod avec uvicorn
+- `@limiter.limit()` sur une fonction **synchrone** utilise `loop.run_until_complete()` en interne
+- En prod (uvicorn = event loop déjà en cours), `run_until_complete()` lève `RuntimeError` et est silencieusement ignoré → la limite n'est jamais appliquée
+- En tests (`TestClient` = synchrone), ça passe sans problème → faux sentiment de sécurité
+- Fix : ajouter `app.add_middleware(SlowAPIMiddleware)` — la vérification se fait au niveau ASGI, pas dans le décorateur
+- Le décorateur `@limiter.limit()` reste nécessaire : il marque la route pour le middleware
+
+### Rate limiting : reset du storage en tests
+- `limiter._storage.reset()` vide le compteur en mémoire — à appeler dans un fixture `autouse=True`
+- Sans ça, les compteurs s'accumulent entre les tests du même process et rendent les tests non déterministes
+
+### Détection de langue LLM : l'injection dynamique bat les instructions système
+- Même avec une règle "LANGUE ABSOLUE PRIORITAIRE" en tête du prompt, les petits modèles ignorent la langue si tout le prompt est en français
+- La technique la plus efficace : injecter un message `{"role": "system", ...}` juste **avant** le dernier message utilisateur dans le tableau messages envoyé à Ollama
+- Ce hint de dernière position est lu juste avant la génération → contourne le biais de langue du prompt principal
+- Détection heuristique (regex fr/en) fragile pour les autres langues → préférer `navigator.language` du navigateur, transmis dans le body de la requête
+- Mapping BCP-47 → nom de langue (`"en-US"` → `"English"`) rend le hint plus explicite pour le modèle

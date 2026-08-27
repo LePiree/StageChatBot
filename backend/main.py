@@ -1,18 +1,46 @@
 import os
 import time
-from typing import List
+from typing import List, Optional
 
+from dotenv import load_dotenv
 from openai import OpenAI
-from fastapi import FastAPI, HTTPException, Response
+
+load_dotenv()  # charge .env à la racine du projet en dev local
+from fastapi import FastAPI, HTTPException, Response, Depends, Request, Security
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from prometheus_client import (
     Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 )
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from system_prompt import get_system_prompt
 
+# ---------------------------------------------------------------------------
+# Rate limiting
+# ---------------------------------------------------------------------------
+# 10 requêtes/minute par IP — seuil calibré pour une conversation chatbot
+# normale (≈ 1 message toutes les 6 s) tout en bloquant un spam évident.
+limiter = Limiter(key_func=get_remote_address)
+
 app = FastAPI(title="Wedding Chatbot API")
+app.state.limiter = limiter
+
+
+async def _rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Trop de requêtes. Veuillez patienter avant de réessayer."},
+    )
+
+
+app.add_exception_handler(RateLimitExceeded, _rate_limit_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -20,6 +48,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ---------------------------------------------------------------------------
+# Authentification Bearer
+# ---------------------------------------------------------------------------
+_bearer_scheme = HTTPBearer(auto_error=False)
+
+
+def verify_token(
+    credentials: Optional[HTTPAuthorizationCredentials] = Security(_bearer_scheme),
+) -> None:
+    expected = os.environ.get("API_TOKEN", "")
+    if not expected or credentials is None or credentials.credentials != expected:
+        raise HTTPException(status_code=401, detail="Authentification requise.")
 
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:1b")
@@ -56,6 +97,20 @@ CHAT_TOKENS_GENERATED_TOTAL = Counter(
 MAX_MESSAGES = 20
 MAX_MESSAGE_LENGTH = 2000
 
+# Correspondance BCP-47 → nom de langue pour le hint envoyé au modèle
+_LANG_NAMES: dict[str, str] = {
+    "en": "English", "fr": "French", "es": "Spanish", "pt": "Portuguese",
+    "de": "German",  "it": "Italian",  "nl": "Dutch",   "pl": "Polish",
+    "ru": "Russian", "ja": "Japanese", "zh": "Chinese", "ar": "Arabic",
+    "tr": "Turkish", "sv": "Swedish",  "da": "Danish",  "fi": "Finnish",
+}
+
+
+def _build_lang_hint(locale: str) -> dict:
+    base = locale.split("-")[0].lower()
+    name = _LANG_NAMES.get(base, locale)
+    return {"role": "system", "content": f"The user's language is {name}. Reply ONLY in {name}."}
+
 
 class Message(BaseModel):
     role: str  # "user" ou "assistant"
@@ -64,6 +119,7 @@ class Message(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: List[Message]
+    lang: Optional[str] = None  # BCP-47 locale envoyée par le widget (navigator.language)
 
 
 class ChatResponse(BaseModel):
@@ -71,14 +127,15 @@ class ChatResponse(BaseModel):
 
 
 @app.post("/api/chat", response_model=ChatResponse)
-def chat(request: ChatRequest):
-    if not request.messages:
+@limiter.limit("10/minute")
+def chat(request: Request, body: ChatRequest, _: None = Depends(verify_token)):
+    if not body.messages:
         raise HTTPException(status_code=400, detail="La liste de messages ne peut pas être vide.")
 
-    if len(request.messages) > MAX_MESSAGES:
+    if len(body.messages) > MAX_MESSAGES:
         raise HTTPException(status_code=400, detail=f"Trop de messages (max {MAX_MESSAGES}).")
 
-    for msg in request.messages:
+    for msg in body.messages:
         if msg.role not in ("user", "assistant"):
             raise HTTPException(
                 status_code=400,
@@ -87,10 +144,12 @@ def chat(request: ChatRequest):
         if len(msg.content) > MAX_MESSAGE_LENGTH:
             raise HTTPException(status_code=400, detail=f"Message trop long (max {MAX_MESSAGE_LENGTH} caractères).")
 
-    if request.messages[-1].role != "user":
+    if body.messages[-1].role != "user":
         raise HTTPException(status_code=400, detail="Le dernier message doit être de rôle 'user'.")
 
-    messages_payload = [{"role": m.role, "content": m.content} for m in request.messages]
+    body_msgs = [{"role": m.role, "content": m.content} for m in body.messages]
+    lang_hint = _build_lang_hint(body.lang) if body.lang else _build_lang_hint("fr")
+    messages_payload = body_msgs[:-1] + [lang_hint] + [body_msgs[-1]]
 
     CHAT_REQUESTS_TOTAL.labels(status="received").inc()
     start = time.time()

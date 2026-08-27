@@ -15,6 +15,14 @@
     ? _scriptEl.dataset.apiUrl.replace(/\/$/, "")
     : "http://localhost:8000";
 
+  // Token lu depuis data-api-token ; ex. <script src="chatbot.js" data-api-token="mon-token">
+  const API_TOKEN = (_scriptEl && _scriptEl.dataset.apiToken)
+    ? _scriptEl.dataset.apiToken
+    : "";
+
+  // Langue du navigateur transmise au backend pour adapter la langue de réponse
+  const BROWSER_LANG = navigator.language || "fr";
+
   // ── État ─────────────────────────────────────────────────────────────────
   let conversationHistory = [];
   let isOpen = false;
@@ -102,9 +110,23 @@
     try {
       const response = await fetch(API_URL + "/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: conversationHistory }),
+        headers: {
+          "Content-Type": "application/json",
+          ...(API_TOKEN ? { "Authorization": "Bearer " + API_TOKEN } : {}),
+        },
+        body: JSON.stringify({ messages: conversationHistory, lang: BROWSER_LANG }),
       });
+
+      if (response.status === 429) {
+        // Retire le dernier message utilisateur de l'historique — il n'a pas été traité
+        conversationHistory.pop();
+        setLoadingIndicator(false);
+        appendMessage("assistant", "⏳ Vous avez envoyé trop de messages. Merci de patienter quelques instants avant de réessayer.");
+        const input2 = document.getElementById("wcb-input");
+        input2.disabled = true;
+        setTimeout(() => { input2.disabled = false; input2.focus(); }, 15000);
+        return;
+      }
 
       if (!response.ok) {
         throw new Error("Erreur serveur : " + response.status);
