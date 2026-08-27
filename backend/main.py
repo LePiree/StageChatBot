@@ -101,9 +101,9 @@ MAX_MESSAGE_LENGTH = 2000
 # Correspondance BCP-47 → nom de langue pour le hint envoyé au modèle
 _LANG_NAMES: dict[str, str] = {
     "en": "English", "fr": "French", "es": "Spanish", "pt": "Portuguese",
-    "de": "German",  "it": "Italian",  "nl": "Dutch",   "pl": "Polish",
+    "de": "German", "it": "Italian", "nl": "Dutch", "pl": "Polish",
     "ru": "Russian", "ja": "Japanese", "zh": "Chinese", "ar": "Arabic",
-    "tr": "Turkish", "sv": "Swedish",  "da": "Danish",  "fi": "Finnish",
+    "tr": "Turkish", "sv": "Swedish", "da": "Danish", "fi": "Finnish",
 }
 
 
