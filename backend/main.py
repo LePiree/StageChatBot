@@ -153,7 +153,7 @@ def chat(request: Request, body: ChatRequest, _: None = Depends(verify_token)):
         _lang = body.lang
     else:
         _txt = body.messages[-1].content
-        _fr_words = {"je","tu","il","elle","nous","vous","les","des","une","est","pas","que","qui","dans","pour","avec","bonjour","merci"}
+        _fr_words = {"je", "tu", "il", "elle", "nous", "vous", "les", "des", "une", "est", "pas", "que", "qui", "dans", "pour", "avec", "bonjour", "merci"}
         _has_fr = any(c in "àâäéèêëîïôùûüçœæ" for c in _txt) or sum(w in _fr_words for w in _txt.lower().split()) >= 2
         _lang = "fr" if _has_fr else "en"
     messages_payload = body_msgs[:-1] + [_build_lang_hint(_lang)] + [body_msgs[-1]]
