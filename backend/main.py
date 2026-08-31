@@ -149,8 +149,14 @@ def chat(request: Request, body: ChatRequest, _: None = Depends(verify_token)):
         raise HTTPException(status_code=400, detail="Le dernier message doit être de rôle 'user'.")
 
     body_msgs = [{"role": m.role, "content": m.content} for m in body.messages]
-    lang_hint = _build_lang_hint(body.lang) if body.lang else _build_lang_hint("fr")
-    messages_payload = body_msgs[:-1] + [lang_hint] + [body_msgs[-1]]
+    if body.lang:
+        _lang = body.lang
+    else:
+        _txt = body.messages[-1].content
+        _fr_words = {"je","tu","il","elle","nous","vous","les","des","une","est","pas","que","qui","dans","pour","avec","bonjour","merci"}
+        _has_fr = any(c in "àâäéèêëîïôùûüçœæ" for c in _txt) or sum(w in _fr_words for w in _txt.lower().split()) >= 2
+        _lang = "fr" if _has_fr else "en"
+    messages_payload = body_msgs[:-1] + [_build_lang_hint(_lang)] + [body_msgs[-1]]
 
     CHAT_REQUESTS_TOTAL.labels(status="received").inc()
     start = time.time()

@@ -20,8 +20,7 @@
     ? _scriptEl.dataset.apiToken
     : "";
 
-  // Langue du navigateur transmise au backend pour adapter la langue de réponse
-  const BROWSER_LANG = navigator.language || "fr";
+
 
   // ── État ─────────────────────────────────────────────────────────────────
   let conversationHistory = [];
@@ -114,7 +113,7 @@
           "Content-Type": "application/json",
           ...(API_TOKEN ? { "Authorization": "Bearer " + API_TOKEN } : {}),
         },
-        body: JSON.stringify({ messages: conversationHistory, lang: BROWSER_LANG }),
+        body: JSON.stringify({ messages: conversationHistory }),
       });
 
       if (response.status === 429) {
